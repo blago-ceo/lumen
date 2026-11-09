@@ -19,7 +19,7 @@ export function PlatformTag({ lead }: { lead: Pick<Lead, 'platform' | 'source' |
 export function LeadCard({ lead, onOpen, locked }: { lead: Lead; onOpen?: () => void; locked?: boolean }) {
   return (
     <motion.article
-      className={cx('lead glass', !lead.seen && !locked && 'unseen')}
+      className={cx('lead glass', lead.isLanding && 'is-landing', !lead.seen && !locked && 'unseen')}
       whileTap={{ scale: 0.985 }}
       transition={spring}
       onClick={() => {
@@ -28,6 +28,7 @@ export function LeadCard({ lead, onOpen, locked }: { lead: Lead; onOpen?: () => 
         onOpen?.();
       }}
     >
+      <i className="lead-tex" aria-hidden />
       <div className="row" style={{ gap: 8 }}>
         <PlatformTag lead={lead} />
         <div className="spacer" />

@@ -249,12 +249,15 @@ function EditProfile({
       {/* живой предпросмотр */}
       <div className="glass" style={{ borderRadius: 22, overflow: 'hidden', marginBottom: 6 }}>
         <ProfileBanner u={preview} height={86} radius={0} />
-        <div className="row" style={{ padding: '0 14px 12px', marginTop: -26, gap: 10, alignItems: 'flex-end' }}>
-          <Avatar user={me} size={60} />
-          <div style={{ minWidth: 0, paddingBottom: 2 }}>
-            <Nick u={preview} style={{ fontSize: 20, fontWeight: 800 }} />
-            {custom && <div className="tiny muted">{custom}</div>}
+        {/* на шапку заходит только аватар, ник — ниже, на тёмном */}
+        <div style={{ padding: '0 14px', marginTop: -30, position: 'relative', zIndex: 2 }}>
+          <div style={{ display: 'inline-block', padding: 4, borderRadius: '50%', background: '#0d0d0d' }}>
+            <Avatar user={me} size={60} />
           </div>
+        </div>
+        <div style={{ padding: '4px 16px 14px', minWidth: 0 }}>
+          <Nick u={preview} style={{ fontSize: 20, fontWeight: 800 }} />
+          {custom && <div className="tiny muted" style={{ marginTop: 2 }}>{custom}</div>}
         </div>
       </div>
 

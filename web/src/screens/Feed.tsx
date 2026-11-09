@@ -155,7 +155,7 @@ function FeedList() {
   const live = platforms.filter((p) => p.enabled && !p.lastError).length;
 
   return (
-    <div className="screen" ref={scroller}>
+    <div className="screen screen-feed" ref={scroller}>
       <div className="content">
         <header className="row" style={{ alignItems: 'flex-end', marginBottom: 16 }}>
           <div>
@@ -229,7 +229,7 @@ function FeedList() {
           )}
         </AnimatePresence>
 
-        <div className="col" style={{ gap: 12, marginTop: 14 }}>
+        <div className="col lead-grid" style={{ gap: 12, marginTop: 14 }}>
           {loading ? (
             [0, 1, 2, 3].map((i) => <div key={i} className="skeleton" style={{ height: 132, opacity: 1 - i * 0.2 }} />)
           ) : items.length === 0 ? (

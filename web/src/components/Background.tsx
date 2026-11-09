@@ -7,6 +7,7 @@ export function Background() {
         <i />
         <i />
       </div>
+      <div className="pattern" aria-hidden />
       <div className="vignette" aria-hidden />
       <div className="grain" aria-hidden />
       <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden>

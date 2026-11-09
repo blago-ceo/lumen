@@ -29,6 +29,12 @@ export default function App() {
   const { me, unread, setUnread } = useStore();
   const [tab, setTab] = useState<Tab>('feed');
   const [dir, setDir] = useState(1);
+  const desktop = useDesktop();
+
+  // на ПК чаты всегда справа — отдельная вкладка не нужна
+  useEffect(() => {
+    if (desktop && tab === 'chats') setTab('feed');
+  }, [desktop, tab]);
 
   // счётчик непрочитанных для бейджа на табе
   useEffect(() => {
@@ -51,40 +57,67 @@ export default function App() {
     setTab(t);
   };
 
+  const screens = (
+    <AnimatePresence initial={false} custom={dir} mode="popLayout">
+      <motion.div
+        key={tab}
+        custom={dir}
+        variants={{
+          enter: (d: number) => ({ opacity: 0, x: d * 40, filter: 'blur(8px)' }),
+          center: { opacity: 1, x: 0, filter: 'blur(0px)' },
+          exit: (d: number) => ({ opacity: 0, x: d * -40, filter: 'blur(8px)' }),
+        }}
+        initial="enter"
+        animate="center"
+        exit="exit"
+        transition={{ type: 'spring', stiffness: 300, damping: 34 }}
+        style={{ position: 'absolute', inset: 0 }}
+      >
+        {tab === 'feed' && <Feed />}
+        {tab === 'responses' && <Responses />}
+        {tab === 'chats' && <Chats />}
+        {tab === 'hub' && <Hub />}
+        {tab === 'profile' && <Profile />}
+      </motion.div>
+    </AnimatePresence>
+  );
+
   return (
     <CallProvider>
       <Background />
       <CursorGlow />
-      <div className="app">
+      <div className={cx('app', desktop && 'app-desk')}>
         {!me ? (
           <Splash />
+        ) : desktop ? (
+          <>
+            {/* ПК: слева во весь экран — текущий раздел, справа — навигация и чаты, как в Discord */}
+            <main className="desk-main">{screens}</main>
+            <motion.aside className="desk-side glass" initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ ...spring, delay: 0.1 }}>
+              <div className="side-brand">
+                <Icon name="sparkle" size={20} />
+                <span>Lumen</span>
+              </div>
+              <nav className="side-nav">
+                {TABS.filter(([id]) => id !== 'chats').map(([id, icon, label]) => (
+                  <button key={id} className={cx('side-tab', tab === id && 'active')} onClick={() => go(id)}>
+                    {tab === id && <motion.div layoutId="side-pill" className="tab-pill" transition={{ type: 'spring', stiffness: 420, damping: 34 }} />}
+                    <Icon name={icon} size={20} stroke={tab === id ? 2.1 : 1.8} />
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </nav>
+              <div className="side-chats">
+                <Chats />
+              </div>
+            </motion.aside>
+          </>
         ) : (
-          <AnimatePresence initial={false} custom={dir} mode="popLayout">
-            <motion.div
-              key={tab}
-              custom={dir}
-              variants={{
-                enter: (d: number) => ({ opacity: 0, x: d * 40, filter: 'blur(8px)' }),
-                center: { opacity: 1, x: 0, filter: 'blur(0px)' },
-                exit: (d: number) => ({ opacity: 0, x: d * -40, filter: 'blur(8px)' }),
-              }}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ type: 'spring', stiffness: 300, damping: 34 }}
-              style={{ position: 'absolute', inset: 0 }}
-            >
-              {tab === 'feed' && <Feed />}
-              {tab === 'responses' && <Responses />}
-              {tab === 'chats' && <Chats />}
-              {tab === 'hub' && <Hub />}
-              {tab === 'profile' && <Profile />}
-            </motion.div>
-          </AnimatePresence>
+          screens
         )}
       </div>
 
-      {me && (
+      {me && !desktop && (
         <div className="tabbar-wrap">
           <motion.nav
             className="tabbar glass strong liquid"
@@ -108,6 +141,19 @@ export default function App() {
       <Toasts />
     </CallProvider>
   );
+}
+
+/** ПК-раскладка от 1100px: экран шире планшета и есть мышь */
+function useDesktop() {
+  const q = '(min-width: 1100px) and (hover: hover)';
+  const [m, setM] = useState(() => matchMedia(q).matches);
+  useEffect(() => {
+    const mq = matchMedia(q);
+    const f = () => setM(mq.matches);
+    mq.addEventListener('change', f);
+    return () => mq.removeEventListener('change', f);
+  }, []);
+  return m;
 }
 
 function Splash() {
