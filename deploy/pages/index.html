@@ -57,22 +57,40 @@
     return ok[0];
   }
 
-  current()
-    .then((d) => {
-      if (!d || !/^https:\/\//.test(d.url || '')) throw new Error('no url');
-      const age = Math.round((Date.now() - d.updatedAt) / 60000);
-      go.href = d.url;
-      go.classList.remove('hidden');
-      if (age > 65) {
-        msg.textContent = 'Сервер давно не обновлял адрес (' + age + ' мин) — компьютер может быть выключен. Попробуйте всё равно.';
-      } else {
-        msg.textContent = 'Открываю…';
-        location.replace(d.url);
-      }
-    })
-    .catch(() => {
-      msg.textContent = 'Сейчас сервер недоступен. Обновите страницу через минуту.';
-    });
+  // Живой ли туннель: no-cors fetch к мёртвому домену падает с сетевой ошибкой, к живому — проходит.
+  async function alive(url) {
+    try {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 8000);
+      await fetch(url + '/api/health?t=' + Date.now(), { mode: 'no-cors', cache: 'no-store', signal: ctl.signal });
+      clearTimeout(timer);
+      return true;
+    } catch (e) { return false; }
+  }
+
+  let tries = 0;
+  async function attempt() {
+    tries++;
+    let d;
+    try { d = await current(); } catch (e) { d = null; }
+    if (!d || !/^https:\/\//.test(d.url || '')) {
+      msg.textContent = 'Не удалось узнать адрес сервера. Обновите страницу через минуту.';
+      return;
+    }
+    go.href = d.url;
+    if (await alive(d.url)) {
+      msg.textContent = 'Открываю…';
+      location.replace(d.url);
+      return;
+    }
+    // туннель как раз перезапускается или компьютер выключен — пробуем ещё несколько минут
+    go.classList.remove('hidden');
+    msg.textContent = tries < 20
+      ? 'Сервер перезапускается, жду новый адрес… (' + tries + ')'
+      : 'Сервер сейчас выключен. Попробуйте позже.';
+    if (tries < 20) setTimeout(attempt, 15000);
+  }
+  attempt();
 </script>
 </body>
 </html>
