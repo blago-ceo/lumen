@@ -61,7 +61,7 @@ export function activateSubscription(userId: number, chargeId: string | null, am
  * Временные туннели (localhost.run) меняют адрес. Если WEBAPP_URL не задан в .env,
  * берём адрес из первого запроса, пришедшего через туннель, и переставляем кнопку бота.
  */
-const TUNNEL_HOST = /^[a-z0-9-]+\.(lhr\.life|localhost\.run|trycloudflare\.com)$/i;
+const TUNNEL_HOST = /^[a-z0-9-]+\.(?:[a-z0-9-]+\.)*(lhr\.life|localhost\.run|trycloudflare\.com|pinggy\.link|pinggy\.online)$/i;
 const pinnedUrl = !!process.env.WEBAPP_URL;
 export function learnPublicHost(host: string | undefined) {
   if (pinnedUrl || !bot || !host || !TUNNEL_HOST.test(host)) return;
