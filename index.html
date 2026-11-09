@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#000000" />
+<title>Lumen</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: #000; color: #fafafa; font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
+    display: grid; place-items: center; text-align: center; padding: 24px; box-sizing: border-box;
+    background-image: radial-gradient(rgba(255,255,255,.1) 1px, transparent 1.3px); background-size: 24px 24px;
+  }
+  .card { max-width: 360px; }
+  .logo { font-size: 44px; animation: spin 6s linear infinite; display: inline-block; }
+  h1 { font-size: 28px; margin: 10px 0 6px; letter-spacing: -.02em; }
+  p { color: rgba(255,255,255,.56); margin: 0 0 18px; }
+  a.btn { display: inline-block; padding: 14px 22px; border-radius: 18px; background: #fff; color: #000; font-weight: 700; text-decoration: none; }
+  .hidden { display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">✦</div>
+  <h1>Lumen</h1>
+  <p id="msg">Подключаюсь…</p>
+  <a id="go" class="btn hidden" href="#">Открыть</a>
+</div>
+<script>
+  // Текущий адрес туннеля лежит в tunnel.json в этой же ветке. Берём через API GitHub — он не кэширует по 10 минут, как Pages.
+  const API = 'https://api.github.com/repos/blago-ceo/lumen/contents/tunnel.json?ref=gh-pages';
+  const msg = document.getElementById('msg');
+  const go = document.getElementById('go');
+
+  async function current() {
+    try {
+      const r = await fetch(API + '&t=' + Date.now(), { headers: { Accept: 'application/vnd.github.raw+json' }, cache: 'no-store' });
+      if (r.ok) return await r.json();
+    } catch (e) {}
+    const r = await fetch('tunnel.json?t=' + Date.now(), { cache: 'no-store' });
+    return r.json();
+  }
+
+  current()
+    .then((d) => {
+      if (!d || !/^https:\/\//.test(d.url || '')) throw new Error('no url');
+      const age = Math.round((Date.now() - d.updatedAt) / 60000);
+      go.href = d.url;
+      go.classList.remove('hidden');
+      if (age > 65) {
+        msg.textContent = 'Сервер давно не обновлял адрес (' + age + ' мин) — компьютер может быть выключен. Попробуйте всё равно.';
+      } else {
+        msg.textContent = 'Открываю…';
+        location.replace(d.url);
+      }
+    })
+    .catch(() => {
+      msg.textContent = 'Сейчас сервер недоступен. Обновите страницу через минуту.';
+    });
+</script>
+</body>
+</html>
