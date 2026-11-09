@@ -24,7 +24,19 @@ export class ApiError extends Error {
   }
 }
 
+/** Демо-сборка (GitHub Pages): «сервер» работает прямо в браузере */
+export const DEMO = import.meta.env.VITE_DEMO === '1';
+export const demoServer = DEMO ? import('../demo/server') : null;
+
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
+  if (demoServer) {
+    const d = await demoServer;
+    try {
+      return (await d.demoRequest(method, path, body)) as T;
+    } catch (e) {
+      throw new ApiError((e as any).status ?? 500, (e as Error).message);
+    }
+  }
   const isForm = body instanceof FormData;
   const res = await fetch(path, {
     method,

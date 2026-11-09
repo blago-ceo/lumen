@@ -17,6 +17,6 @@ createRoot(document.getElementById('root')!).render(
 );
 
 // PWA: офлайн-оболочка и установка на телефон
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+if ('serviceWorker' in navigator && import.meta.env.PROD && import.meta.env.VITE_DEMO !== '1') {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 }

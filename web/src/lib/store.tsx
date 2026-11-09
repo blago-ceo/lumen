@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { api, type Billing, type User } from './api';
+import { api, demoServer, type Billing, type User } from './api';
 
 type Handler = (data: any) => void;
 
@@ -11,10 +11,19 @@ export function on(type: string, fn: Handler) {
   return () => void handlers.get(type)!.delete(fn);
 }
 let socket: WebSocket | null = null;
+const dispatch = (type: string, data: unknown) => handlers.get(type)?.forEach((h) => h(data));
 export function sendWs(msg: object) {
+  if (demoServer) {
+    demoServer.then((d) => d.demoSendWs(msg as any));
+    return;
+  }
   if (socket?.readyState === 1) socket.send(JSON.stringify(msg));
 }
 function connectWs() {
+  if (demoServer) {
+    demoServer.then((d) => d.setDemoEmitter(dispatch));
+    return;
+  }
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   const ws = new WebSocket(`${proto}://${location.host}/ws?token=${encodeURIComponent(api.token())}`);
   socket = ws;

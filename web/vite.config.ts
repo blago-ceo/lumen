@@ -17,6 +17,8 @@ function apiPort() {
 export default defineConfig(() => {
   const api = `http://127.0.0.1:${apiPort()}`;
   return {
+    // демо на GitHub Pages живёт по адресу /lumen/
+    base: process.env.VITE_DEMO === '1' ? '/lumen/' : '/',
     plugins: [react()],
     server: {
       port: Number(process.env.WEB_PORT || 5180),
