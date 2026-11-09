@@ -28,6 +28,15 @@ npm run dev:web      # фронт http://localhost:5180
 При `DEV_AUTH=1` вход работает без Telegram: dev-пользователь становится админом, плюс создаются 3 демо-юзера для чатов. Оплату можно «симулировать».
 Проверить парсеры разово: `npm run parse:once -w server` (или `… -- kwork`).
 
+## Бесплатно на Render
+
+1. Зарегистрируйтесь на [render.com](https://render.com) через GitHub.
+2. **New → Blueprint** → выберите репозиторий `blago-ceo/lumen` → Render прочитает `render.yaml`.
+3. Заполните поля: `BOT_TOKEN` (от @BotFather), `ADMIN_IDS` (свой Telegram ID из @userinfobot), `ANTHROPIC_API_KEY` — по желанию.
+4. **Apply** — через несколько минут сайт будет на `https://lumen-xxxx.onrender.com`. Адрес сам подставится в кнопку бота.
+
+Важно: один и тот же бот нельзя одновременно запускать и на Render, и у себя на компьютере — Telegram отдаёт сообщения только одному. Ограничения бесплатного тарифа: сервис засыпает через 15 минут без посетителей (первое открытие ~минута), база обнуляется при каждом перезапуске.
+
 ## В продакшен
 
 1. Создай бота у @BotFather, затем `/newapp` или Bot Settings → Menu Button с адресом `WEBAPP_URL` (нужен HTTPS).

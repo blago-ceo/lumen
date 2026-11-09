@@ -11,7 +11,8 @@ export const config = {
   webDist: path.join(root, 'web', 'dist'),
   port: num(process.env.PORT, 8787),
   botToken: process.env.BOT_TOKEN ?? '',
-  webappUrl: process.env.WEBAPP_URL ?? '',
+  // на Render адрес сервиса приходит сам в RENDER_EXTERNAL_URL
+  webappUrl: process.env.WEBAPP_URL || process.env.RENDER_EXTERNAL_URL || '',
   adminIds: (process.env.ADMIN_IDS ?? '')
     .split(',')
     .map((s) => Number(s.trim()))
