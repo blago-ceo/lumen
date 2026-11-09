@@ -10,7 +10,7 @@ import { LeadCard } from './LeadCard';
 import { LeadSheet } from './LeadSheet';
 import { Paywall } from './Paywall';
 
-type Extra = 'landing' | 'mine' | 'b10' | 'b30';
+type Extra = 'landing' | 'design' | 'dev' | 'budget' | 'contact' | 'today' | 'mine' | 'b10' | 'b30';
 
 export function Feed() {
   const { billing, me } = useStore();
@@ -45,7 +45,11 @@ function FeedList() {
     (before?: number) => {
       const p = new URLSearchParams();
       if (platform !== 'all') p.set('platform', platform);
-      if (extras.has('landing')) p.set('landing', '1');
+      const kinds = (['landing', 'design', 'dev'] as const).filter((k) => extras.has(k));
+      if (kinds.length) p.set('kind', kinds.join(','));
+      if (extras.has('budget')) p.set('hasBudget', '1');
+      if (extras.has('contact')) p.set('hasContact', '1');
+      if (extras.has('today')) p.set('today', '1');
       if (extras.has('mine')) p.set('mine', '1');
       if (extras.has('b30')) p.set('minBudget', '30000');
       else if (extras.has('b10')) p.set('minBudget', '10000');
@@ -91,7 +95,14 @@ function FeedList() {
   useEffect(
     () =>
       on('leads:new', (leads: Lead[]) => {
-        const fit = leads.filter((l) => (platform === 'all' || l.platform === platform) && (!extras.has('landing') || l.isLanding));
+        const kinds = (['landing', 'design', 'dev'] as const).filter((k) => extras.has(k));
+        const fit = leads.filter(
+          (l) =>
+            (platform === 'all' || l.platform === platform) &&
+            (!kinds.length || (kinds.includes('landing') && l.isLanding) || (kinds.includes('design') && l.isDesign) || (kinds.includes('dev') && l.isDev)) &&
+            (!extras.has('contact') || !!l.contact) &&
+            (!extras.has('budget') || !!l.budgetText),
+        );
         if (fit.length) {
           haptic.tap('soft');
           setIncoming((s) => [...fit, ...s]);
@@ -187,10 +198,20 @@ function FeedList() {
           ))}
         </div>
         <div className="chips" style={{ isolation: 'isolate', marginTop: 2 }}>
-          <ExtraChip on={extras.has('landing')} onClick={() => toggleExtra('landing')}>✦ Только лендинги</ExtraChip>
+          <ExtraChip on={extras.has('landing')} onClick={() => toggleExtra('landing')}>✦ Лендинги</ExtraChip>
+          <ExtraChip on={extras.has('design')} onClick={() => toggleExtra('design')}>Дизайн</ExtraChip>
+          <ExtraChip on={extras.has('dev')} onClick={() => toggleExtra('dev')}>Разработка</ExtraChip>
+          <ExtraChip on={extras.has('today')} onClick={() => toggleExtra('today')}>За сутки</ExtraChip>
+          <ExtraChip on={extras.has('budget')} onClick={() => toggleExtra('budget')}>С бюджетом</ExtraChip>
+          <ExtraChip on={extras.has('contact')} onClick={() => toggleExtra('contact')}>С контактом</ExtraChip>
           <ExtraChip on={extras.has('b10')} onClick={() => toggleExtra('b10')}>от 10 000 ₽</ExtraChip>
           <ExtraChip on={extras.has('b30')} onClick={() => toggleExtra('b30')}>от 30 000 ₽</ExtraChip>
           <ExtraChip on={extras.has('mine')} onClick={() => toggleExtra('mine')}>Из моих чатов</ExtraChip>
+          {extras.size > 0 && (
+            <button className="chip" onClick={() => (haptic.select(), setExtras(new Set()))}>
+              <Icon name="close" size={14} /> сбросить
+            </button>
+          )}
         </div>
 
         <AnimatePresence>

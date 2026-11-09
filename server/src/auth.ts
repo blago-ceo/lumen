@@ -3,6 +3,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { config } from './config.js';
 import { q, now, type Row } from './db.js';
 import { signToken, verifyToken } from './lib/crypto.js';
+import { isOnline } from './realtime.js';
 
 export interface TgUser {
   id: number;
@@ -120,8 +121,22 @@ export function publicUser(u: Row) {
     banner: u.banner,
     bio: u.bio,
     statusEmoji: u.status_emoji,
+    customStatus: u.custom_status ?? '',
+    bannerUrl: u.banner_url ?? null,
+    bannerGrad: u.banner_grad ?? '',
+    nickGrad: u.nick_grad ?? '',
+    nickFont: u.nick_font ?? 'manrope',
+    // статус как в Discord: online / idle / dnd, «невидимка» другим показывается как offline
+    presence: presenceOf(u),
     pro: isPro(u.id),
     admin: !!u.is_admin,
-    online: Date.now() - (u.last_seen ?? 0) < 2 * 60 * 1000,
+    online: presenceOf(u) !== 'offline',
+    createdAt: u.created_at,
   };
+}
+
+function presenceOf(u: Row): 'online' | 'idle' | 'dnd' | 'offline' {
+  const connected = isOnline(u.id) || Date.now() - (u.last_seen ?? 0) < 2 * 60 * 1000;
+  if (!connected || u.presence === 'invisible') return 'offline';
+  return (['online', 'idle', 'dnd'].includes(u.presence) ? u.presence : 'online') as 'online' | 'idle' | 'dnd';
 }

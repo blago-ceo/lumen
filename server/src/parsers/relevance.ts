@@ -53,3 +53,11 @@ export function scoreLead(title: string, description: string) {
 }
 
 export const RELEVANT_THRESHOLD = 4;
+
+/** Тип заказа для фильтров: дизайн и/или разработка (лендинг — отдельный флаг) */
+export function kindOf(title: string, description: string) {
+  const t = `${title}\n${description}`;
+  const isDesign = /дизайн|макет|figma|фигм|\bui\b|\bux\b|редизайн|прототип|визуал/i.test(t);
+  const isDev = /верст|разработ|программ|wordpress|битрикс|tilda|тильд|сборк|код|frontend|фронтенд|react|webflow|доработ|под ключ|натянуть|адаптив/i.test(t);
+  return { isDesign, isDev };
+}

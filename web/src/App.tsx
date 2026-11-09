@@ -1,6 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { Background } from './components/Background';
+import { CursorGlow } from './components/CursorGlow';
+import { CallProvider } from './lib/calls';
 import { Icon } from './components/Icon';
 import { Toasts, spring } from './components/ui';
 import { api, type Conversation } from './lib/api';
@@ -11,10 +13,12 @@ import { Feed } from './screens/Feed';
 import { Chats } from './screens/Chats';
 import { Hub } from './screens/Hub';
 import { Profile } from './screens/Profile';
+import { Responses } from './screens/Responses';
 
-type Tab = 'feed' | 'chats' | 'hub' | 'profile';
+type Tab = 'feed' | 'responses' | 'chats' | 'hub' | 'profile';
 const TABS: [Tab, string, string][] = [
   ['feed', 'feed', 'Лента'],
+  ['responses', 'bolt', 'Отклики'],
   ['chats', 'chat', 'Чаты'],
   ['hub', 'hub', 'Аккаунты'],
   ['profile', 'user', 'Профиль'],
@@ -48,8 +52,9 @@ export default function App() {
   };
 
   return (
-    <>
+    <CallProvider>
       <Background />
+      <CursorGlow />
       <div className="app">
         {!me ? (
           <Splash />
@@ -70,6 +75,7 @@ export default function App() {
               style={{ position: 'absolute', inset: 0 }}
             >
               {tab === 'feed' && <Feed />}
+              {tab === 'responses' && <Responses />}
               {tab === 'chats' && <Chats />}
               {tab === 'hub' && <Hub />}
               {tab === 'profile' && <Profile />}
@@ -100,7 +106,7 @@ export default function App() {
         </div>
       )}
       <Toasts />
-    </>
+    </CallProvider>
   );
 }
 

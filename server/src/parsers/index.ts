@@ -6,7 +6,7 @@ import { flru } from './flru.js';
 import { freelanceru } from './freelanceru.js';
 import { kwork } from './kwork.js';
 import { pchel } from './pchel.js';
-import { RELEVANT_THRESHOLD, scoreLead } from './relevance.js';
+import { RELEVANT_THRESHOLD, kindOf, scoreLead } from './relevance.js';
 import { telegram } from './telegram.js';
 import { twogis } from './twogis.js';
 import type { Parser, RawLead } from './types.js';
@@ -29,6 +29,8 @@ export function leadDto(r: Row) {
     source: r.source,
     score: r.score,
     isLanding: !!r.is_landing,
+    isDesign: !!r.is_design,
+    isDev: !!r.is_dev,
     personal: r.owner_id != null,
     publishedAt: r.published_at,
     saved: !!r.saved,
@@ -132,4 +134,13 @@ export function startScheduler() {
     // разносим старт, чтобы не долбить сеть одновременно
     setTimeout(loop, 1500 + i * 4000);
   });
+}
+
+/** Проставляет типы старым заказам (после миграции) */
+export function backfillKinds() {
+  const rows = q.all<{ id: string; title: string; description: string }>('SELECT id, title, description FROM leads WHERE is_design IS NULL');
+  for (const r of rows) {
+    const k = kindOf(r.title, r.description);
+    q.run('UPDATE leads SET is_design = ?, is_dev = ? WHERE id = ?', k.isDesign ? 1 : 0, k.isDev ? 1 : 0, r.id);
+  }
 }

@@ -8,6 +8,9 @@ import { on, sendWs, useStore } from '../lib/store';
 import { haptic, openLink, showBack } from '../lib/tg';
 import { clock, plural } from '../lib/util';
 import { ConvAvatar } from './Chats';
+import { GroupInfo } from './GroupInfo';
+import { useCalls } from '../lib/calls';
+import { Nick } from '../components/ProfileBits';
 import { PlatformTag } from './LeadCard';
 
 export function ChatRoom({ id, onClose, onProfile }: { id: number; onClose: () => void; onProfile: (uid: number) => void }) {
@@ -18,6 +21,8 @@ export function ChatRoom({ id, onClose, onProfile }: { id: number; onClose: () =
   const [typing, setTyping] = useState<number | null>(null);
   const list = useRef<HTMLDivElement>(null);
   const lastTyping = useRef(0);
+  const [info, setInfo] = useState(false);
+  const { startCall } = useCalls();
 
   useEffect(() => showBack(onClose), [onClose]);
 
@@ -80,10 +85,10 @@ export function ChatRoom({ id, onClose, onProfile }: { id: number; onClose: () =
           <Icon name="back" />
         </button>
         {conv && (
-          <button className="row" style={{ flex: 1, minWidth: 0, textAlign: 'left' }} onClick={() => conv.peer && onProfile(conv.peer.id)}>
+          <button className="row" style={{ flex: 1, minWidth: 0, textAlign: 'left' }} onClick={() => (conv.peer ? onProfile(conv.peer.id) : conv.type === 'group' && setInfo(true))}>
             <ConvAvatar c={conv} size={40} />
             <div style={{ minWidth: 0 }}>
-              <div className="h3" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.title}</div>
+              <div className="h3" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.peer ? <Nick u={conv.peer} /> : conv.title}</div>
               <div className="tiny muted">
                 {typer
                   ? `${typer.nickname} печатает…`
@@ -98,7 +103,23 @@ export function ChatRoom({ id, onClose, onProfile }: { id: number; onClose: () =
             </div>
           </button>
         )}
+        {conv?.type === 'direct' && conv.peer && (
+          <>
+            <button className="icon-btn" onClick={() => startCall(conv.id, conv.peer!, false)} aria-label="Позвонить">
+              <Icon name="call" size={20} />
+            </button>
+            <button className="icon-btn" onClick={() => startCall(conv.id, conv.peer!, true)} aria-label="Видеозвонок">
+              <Icon name="video" size={20} />
+            </button>
+          </>
+        )}
+        {conv?.type === 'group' && (
+          <button className="icon-btn" onClick={() => setInfo(true)} aria-label="О группе">
+            <Icon name="users" size={20} />
+          </button>
+        )}
       </div>
+      {conv?.type === 'group' && <GroupInfo open={info} conv={conv} onClose={() => setInfo(false)} onChange={setConv} onLeft={onClose} onProfile={onProfile} />}
 
       <div ref={list} style={{ flex: 1, overflowY: 'auto', padding: '16px 12px 8px', display: 'flex', flexDirection: 'column', gap: 4 }}>
         {msgs.map((m, i) => {
@@ -121,7 +142,7 @@ export function ChatRoom({ id, onClose, onProfile }: { id: number; onClose: () =
                 <LeadBubble lead={m.payload} mine={mine} time={m.createdAt} author={!mine && conv?.type !== 'direct' && firstOfGroup ? m.sender?.nickname : undefined} />
               ) : (
                 <div className={`bubble ${mine ? 'me' : 'them'}`}>
-                  {!mine && conv?.type !== 'direct' && firstOfGroup && <div className="tiny" style={{ color: 'var(--accent)', fontWeight: 700, marginBottom: 2 }}>{m.sender?.nickname}</div>}
+                  {!mine && conv?.type !== 'direct' && firstOfGroup && <div className="tiny" style={{ fontWeight: 700, marginBottom: 2 }}>{m.sender && <Nick u={m.sender} />}</div>}
                   {m.text}
                   <span className="bubble-time">{clock(m.createdAt)}</span>
                 </div>

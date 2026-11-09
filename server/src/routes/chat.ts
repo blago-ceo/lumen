@@ -178,6 +178,33 @@ export async function chatRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  /** Переименовать группу / сменить эмодзи (любой участник) */
+  app.patch('/api/conversations/:id', async (req, reply) => {
+    const cid = Number((req.params as any).id);
+    const c = q.get("SELECT * FROM conversations WHERE id = ? AND type = 'group'", cid);
+    if (!c || !isMember(cid, req.user.id)) return reply.code(404).send({ error: 'not_found' });
+    const b = (req.body ?? {}) as { title?: string; emoji?: string };
+    const title = b.title !== undefined ? String(b.title).trim().slice(0, 48) : c.title;
+    const emoji = b.emoji !== undefined ? String(b.emoji).slice(0, 8) : c.emoji;
+    if (!title) return reply.code(400).send({ error: 'Название не может быть пустым' });
+    q.run('UPDATE conversations SET title = ?, emoji = ?, updated_at = ? WHERE id = ?', title, emoji, now(), cid);
+    if (title !== c.title) postMessage(cid, req.user.id, `${req.user.nickname} переименовал(а) группу в «${title}»`, 'system');
+    return convDto(q.get('SELECT * FROM conversations WHERE id = ?', cid)!, req.user.id);
+  });
+
+  /** Исключить участника (только создатель группы) */
+  app.delete('/api/conversations/:id/members/:userId', async (req, reply) => {
+    const cid = Number((req.params as any).id);
+    const target = Number((req.params as any).userId);
+    const c = q.get("SELECT * FROM conversations WHERE id = ? AND type = 'group'", cid);
+    if (!c || c.owner_id !== req.user.id) return reply.code(403).send({ error: 'Только создатель может исключать' });
+    if (target === req.user.id) return reply.code(400).send({ error: 'Нельзя исключить себя' });
+    const u = q.get('SELECT nickname FROM users WHERE id = ?', target);
+    q.run('DELETE FROM conversation_members WHERE conversation_id = ? AND user_id = ?', cid, target);
+    if (u) postMessage(cid, req.user.id, `${req.user.nickname} исключил(а) ${u.nickname}`, 'system');
+    return convDto(c, req.user.id);
+  });
+
   app.get('/api/conversations/:id', async (req, reply) => {
     const cid = Number((req.params as any).id);
     if (!isMember(cid, req.user.id)) return reply.code(404).send({ error: 'not_found' });

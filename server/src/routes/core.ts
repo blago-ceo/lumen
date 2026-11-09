@@ -12,6 +12,7 @@ import { botInfo, createNonce, takeNonce } from '../lib/webLogin.js';
 const RINGS = ['none', 'aurora', 'sunset', 'mint', 'mono', 'holo', 'fire', 'ice'];
 const THEMES = ['violet', 'cyan', 'rose', 'lime', 'amber', 'silver'];
 const BANNERS = ['nebula', 'waves', 'grid', 'prism', 'dusk', 'void'];
+const NICK_FONTS = ['manrope', 'unbounded', 'mono', 'serif', 'script', 'pixel'];
 
 /** Dev-режим: dev-пользователь = админ, плюс пара демо-юзеров, чтобы было с кем дружить и чатиться */
 function seedDevUsers() {
@@ -66,7 +67,9 @@ export async function coreRoutes(app: FastifyInstance) {
   app.get('/api/me', { preHandler: requireUser }, async (req) => ({
     ...publicUser(req.user),
     notify: !!req.user.notify,
-    options: { rings: RINGS, themes: THEMES, banners: BANNERS },
+    aiPersona: req.user.ai_persona ?? '',
+    presencePref: req.user.presence ?? 'online',
+    options: { rings: RINGS, themes: THEMES, banners: BANNERS, fonts: NICK_FONTS },
   }));
 
   app.patch('/api/me', { preHandler: requireUser }, async (req, reply) => {
@@ -79,7 +82,6 @@ export async function coreRoutes(app: FastifyInstance) {
       if (taken) return reply.code(409).send({ error: 'Ник занят' });
       q.run('UPDATE users SET nickname = ? WHERE id = ?', nick, u.id);
     }
-    if (b.bio !== undefined) q.run('UPDATE users SET bio = ? WHERE id = ?', String(b.bio).slice(0, 140), u.id);
     if (b.statusEmoji !== undefined) q.run('UPDATE users SET status_emoji = ? WHERE id = ?', [...String(b.statusEmoji)].slice(0, 2).join(''), u.id);
     if (b.ring !== undefined && RINGS.includes(b.ring)) {
       const proOnly = ['holo', 'fire', 'ice'];
@@ -89,21 +91,45 @@ export async function coreRoutes(app: FastifyInstance) {
     if (b.theme !== undefined && THEMES.includes(b.theme)) q.run('UPDATE users SET theme = ? WHERE id = ?', b.theme, u.id);
     if (b.banner !== undefined && BANNERS.includes(b.banner)) q.run('UPDATE users SET banner = ? WHERE id = ?', b.banner, u.id);
     if (b.notify !== undefined) q.run('UPDATE users SET notify = ? WHERE id = ?', b.notify ? 1 : 0, u.id);
+    // профиль в стиле Discord — бесплатно, без «нитро»
+    const grad = (v: unknown) => {
+      const parts = String(v ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+      return parts.length === 0 ? '' : parts.length <= 3 && parts.every((c) => /^#[0-9a-fA-F]{6}$/.test(c)) ? parts.join(',') : null;
+    };
+    if (b.bannerGrad !== undefined) {
+      const g = grad(b.bannerGrad);
+      if (g === null) return reply.code(400).send({ error: 'Градиент: 1–3 цвета #rrggbb' });
+      q.run('UPDATE users SET banner_grad = ? WHERE id = ?', g, u.id);
+    }
+    if (b.nickGrad !== undefined) {
+      const g = grad(b.nickGrad);
+      if (g === null) return reply.code(400).send({ error: 'Градиент: 1–3 цвета #rrggbb' });
+      q.run('UPDATE users SET nick_grad = ? WHERE id = ?', g, u.id);
+    }
+    if (b.nickFont !== undefined && NICK_FONTS.includes(b.nickFont)) q.run('UPDATE users SET nick_font = ? WHERE id = ?', b.nickFont, u.id);
+    if (b.presence !== undefined && ['online', 'idle', 'dnd', 'invisible'].includes(b.presence)) q.run('UPDATE users SET presence = ? WHERE id = ?', b.presence, u.id);
+    if (b.customStatus !== undefined) q.run('UPDATE users SET custom_status = ? WHERE id = ?', String(b.customStatus).slice(0, 60), u.id);
+    if (b.bannerUrl === null) q.run('UPDATE users SET banner_url = NULL WHERE id = ?', u.id);
+    if (b.bio !== undefined) q.run('UPDATE users SET bio = ? WHERE id = ?', String(b.bio).slice(0, 300), u.id);
+    if (b.aiPersona !== undefined) q.run('UPDATE users SET ai_persona = ? WHERE id = ?', String(b.aiPersona).slice(0, 1500), u.id);
     const fresh = q.get('SELECT * FROM users WHERE id = ?', u.id)!;
-    return { ...publicUser(fresh), notify: !!fresh.notify };
+    return { ...publicUser(fresh), notify: !!fresh.notify, aiPersona: fresh.ai_persona, presencePref: fresh.presence };
   });
 
-  app.post('/api/me/avatar', { preHandler: requireUser }, async (req, reply) => {
+  /** Загрузка картинки/GIF: аватар или фон профиля */
+  const upload = (column: 'avatar_url' | 'banner_url', maxMb: number) => async (req: any, reply: any) => {
     const file = await req.file();
-    if (!file || !/^image\/(png|jpe?g|webp|gif)$/.test(file.mimetype)) return reply.code(400).send({ error: 'Нужна картинка' });
+    if (!file || !/^image\/(png|jpe?g|webp|gif)$/.test(file.mimetype)) return reply.code(400).send({ error: 'Нужна картинка или GIF' });
     const buf = await file.toBuffer();
-    if (buf.length > 4 * 1024 * 1024) return reply.code(413).send({ error: 'До 4 МБ' });
+    if (buf.length > maxMb * 1024 * 1024) return reply.code(413).send({ error: `До ${maxMb} МБ` });
     const ext = file.mimetype.split('/')[1].replace('jpeg', 'jpg');
     const name = `${req.user.id}-${crypto.randomBytes(6).toString('hex')}.${ext}`;
     fs.writeFileSync(path.join(config.dataDir, 'uploads', name), buf);
-    q.run('UPDATE users SET avatar_url = ? WHERE id = ?', `/uploads/${name}`, req.user.id);
-    return { avatar: `/uploads/${name}` };
-  });
+    q.run(`UPDATE users SET ${column} = ? WHERE id = ?`, `/uploads/${name}`, req.user.id);
+    return { url: `/uploads/${name}`, avatar: `/uploads/${name}` };
+  };
+  app.post('/api/me/avatar', { preHandler: requireUser }, upload('avatar_url', 8));
+  app.post('/api/me/banner', { preHandler: requireUser }, upload('banner_url', 12));
 
   app.get('/api/users/search', { preHandler: requireUser }, async (req) => {
     const s = String((req.query as any).q ?? '').trim().replace(/^@/, '');
@@ -160,6 +186,18 @@ export async function coreRoutes(app: FastifyInstance) {
       params.push(qs.platform);
     }
     if (qs.landing === '1') where.push('l.is_landing = 1');
+    // тип заказа: landing | design | dev (несколько через запятую — ИЛИ)
+    if (qs.kind) {
+      const map: Record<string, string> = { landing: 'l.is_landing = 1', design: 'l.is_design = 1', dev: 'l.is_dev = 1' };
+      const parts = qs.kind.split(',').map((k) => map[k]).filter(Boolean);
+      if (parts.length) where.push(`(${parts.join(' OR ')})`);
+    }
+    if (qs.hasBudget === '1') where.push("(l.budget_value IS NOT NULL OR (l.budget_text IS NOT NULL AND l.budget_text != 'Договорная'))");
+    if (qs.hasContact === '1') where.push('l.contact IS NOT NULL');
+    if (qs.today === '1') {
+      where.push('l.published_at > ?');
+      params.push(now() - 24 * 3600_000);
+    }
     if (qs.saved === '1') where.push('s.saved = 1');
     if (qs.mine === '1') {
       where.push('l.owner_id = ?');
@@ -178,12 +216,15 @@ export async function coreRoutes(app: FastifyInstance) {
       params.push(Number(qs.before));
     }
     const rows = q.all(
-      `SELECT l.*, s.saved, s.seen FROM leads l
+      `SELECT l.*, s.saved, s.seen,
+         EXISTS(SELECT 1 FROM responses r WHERE r.lead_id = l.id AND r.user_id = ?) AS in_responses
+       FROM leads l
        LEFT JOIN lead_state s ON s.lead_id = l.id AND s.user_id = ?
        WHERE ${where.join(' AND ')} ORDER BY l.published_at DESC LIMIT 30`,
+      req.user.id,
       ...params,
     );
-    return { items: rows.map(leadDto), next: rows.length === 30 ? rows[rows.length - 1].published_at : null };
+    return { items: rows.map((r) => ({ ...leadDto(r), inResponses: !!r.in_responses })), next: rows.length === 30 ? rows[rows.length - 1].published_at : null };
   });
 
   app.post('/api/leads/:id/state', { preHandler: [requireUser, requirePro] }, async (req) => {

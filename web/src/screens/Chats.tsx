@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Avatar } from '../components/Avatar';
+import { Nick } from '../components/ProfileBits';
 import { Icon } from '../components/Icon';
 import { Seg, Sheet, listItem, spring } from '../components/ui';
 import { api, type Conversation, type User } from '../lib/api';
@@ -236,11 +237,11 @@ export function UserRow({ u, onClick, children, selected }: { u: User; onClick?:
       <Avatar user={u} size={46} showOnline />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="row" style={{ gap: 6 }}>
-          <span className="h3">{u.nickname}</span>
+          <Nick u={u} className="h3" />
           {u.statusEmoji && <span>{u.statusEmoji}</span>}
           {u.pro && <span className="badge badge-accent" style={{ height: 17, fontSize: 9.5, padding: '0 5px' }}>PRO</span>}
         </div>
-        <div className="small muted" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.online ? 'в сети' : u.bio || u.name || ''}</div>
+        <div className="small muted" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.customStatus || (u.online ? 'в сети' : u.bio || u.name || '')}</div>
       </div>
       {children}
     </motion.div>
@@ -248,7 +249,7 @@ export function UserRow({ u, onClick, children, selected }: { u: User; onClick?:
 }
 
 /* ───── Создание группы ───── */
-const EMOJIS = ['✦', '🎨', '🚀', '💎', '🔥', '🌙', '⚡️', '🧩'];
+export const EMOJIS = ['✦', '🎨', '🚀', '💎', '🔥', '🌙', '⚡️', '🧩'];
 
 function CreateGroup({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (c: Conversation) => void }) {
   const [title, setTitle] = useState('');

@@ -87,14 +87,18 @@ a { color: inherit; text-decoration: none; }
 /* кромка-блик: градиентная обводка через маску */
 .glass::before {
   content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
-  background: linear-gradient(150deg, rgba(255,255,255,.38), rgba(255,255,255,.06) 30%, rgba(255,255,255,.02) 60%, rgba(255,255,255,.18));
+  background:
+    radial-gradient(180px circle at var(--mx, -999px) var(--my, -999px), rgba(255,255,255,.7), transparent 70%),
+    linear-gradient(150deg, rgba(255,255,255,.38), rgba(255,255,255,.06) 30%, rgba(255,255,255,.02) 60%, rgba(255,255,255,.18));
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor; mask-composite: exclude;
 }
 /* мягкий specular-блик сверху */
 .glass::after {
-  content: ''; position: absolute; inset: 0 0 55% 0; border-radius: inherit; pointer-events: none; z-index: -1;
-  background: radial-gradient(120% 90% at 20% 0%, rgba(255,255,255,.10), transparent 60%);
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
+  background:
+    radial-gradient(320px circle at var(--mx, -999px) var(--my, -999px), rgba(255,255,255,.075), transparent 65%),
+    radial-gradient(120% 50% at 20% 0%, rgba(255,255,255,.10), transparent 60%);
 }
 .glass.thin { background: rgba(255, 255, 255, 0.05); }
 .glass.strong { background: linear-gradient(160deg, rgba(255,255,255,.13), rgba(255,255,255,.05)); }
@@ -310,3 +314,73 @@ textarea.area { width: 100%; min-height: 88px; resize: none; padding: 14px 16px;
 @media (min-width: 700px) {
   .screen > .content { max-width: 600px; margin: 0 auto; }
 }
+
+/* ───── свечение под курсором ───── */
+.cursor-glow {
+  position: fixed; left: 0; top: 0; width: 520px; height: 520px; margin: -260px 0 0 -260px; border-radius: 50%;
+  pointer-events: none; z-index: 1; mix-blend-mode: screen; opacity: 0; transition: opacity .4s;
+  background: radial-gradient(circle, rgba(255,255,255,.085), rgba(255,255,255,.03) 35%, transparent 65%);
+  will-change: transform;
+}
+.cursor-glow.on { opacity: 1; }
+@media (hover: none) { .cursor-glow { display: none; } }
+
+/* ───── профиль в стиле Discord ───── */
+.pcard { border-radius: 28px; overflow: hidden; --card: #0d0d0d; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.025)); }
+.pcard .banner { border-radius: 0; }
+.pcard-head { display: flex; align-items: flex-start; padding: 0 16px; margin-top: -52px; position: relative; z-index: 2; }
+.pcard-ava { position: relative; padding: 5px; border-radius: 50%; background: var(--card); }
+.pcard-presence { position: absolute; right: 4px; bottom: 6px; border-radius: 50%; }
+.pcard-cam { position: absolute; left: 2px; bottom: 6px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: rgba(20,20,20,.9); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.pcard-body { padding: 8px 18px 18px; }
+.pcard-nick { font-size: 24px; font-weight: 800; line-height: 1.15; letter-spacing: -0.01em; }
+.pcard-status { display: inline-flex; align-items: center; gap: 7px; margin-top: 10px; padding: 7px 12px; border-radius: 12px; background: rgba(255,255,255,.05); box-shadow: inset 0 0 0 1px var(--line); font-size: 13px; }
+.pcard-sect { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.pcard-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.pcard-bio { margin: 0; white-space: pre-wrap; line-height: 1.5; }
+.banner-custom { background-size: cover; background-position: center; background-color: #111; }
+
+.nick { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+.nick-manrope { font-family: var(--font); }
+.nick-unbounded { font-family: var(--display); font-weight: 600 !important; }
+.nick-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+.nick-serif { font-family: 'Playfair Display', Georgia, serif; font-style: italic; }
+.nick-script { font-family: 'Caveat', cursive; font-size: 1.25em; font-weight: 700 !important; }
+.nick-pixel { font-family: 'Press Start 2P', monospace; font-size: .62em; font-weight: 400 !important; line-height: 1.6; }
+
+.swatch { flex: none; width: 40px; height: 40px; border-radius: 14px; display: grid; place-items: center; background: rgba(255,255,255,.06); box-shadow: inset 0 0 0 1px var(--line); transition: box-shadow .2s, transform .2s; }
+.swatch.on { box-shadow: 0 0 0 2px var(--accent); }
+.swatch:active { transform: scale(.92); }
+.color-dot { position: relative; width: 30px; height: 30px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(255,255,255,.3), 0 0 0 3px rgba(255,255,255,.06); overflow: hidden; display: grid; place-items: center; cursor: pointer; }
+.color-dot input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.color-dot.add { background: rgba(255,255,255,.06); }
+.font-pick { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 6px; border-radius: 16px; }
+.font-pick.on { box-shadow: 0 0 0 2px var(--accent); }
+
+/* ───── звонки ───── */
+.call { position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: radial-gradient(80% 60% at 50% 30%, #1a1a1a, #000 70%); padding: calc(var(--safe-top) + 30px) 20px calc(var(--safe-bottom) + 30px); }
+.call video.remote { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.call video.local { position: absolute; right: 16px; top: calc(var(--safe-top) + 16px); width: 110px; height: 150px; object-fit: cover; border-radius: 18px; box-shadow: 0 0 0 1px var(--line-strong); z-index: 3; transform: scaleX(-1); }
+.call-info { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+.call-ctrls { position: absolute; bottom: calc(var(--safe-bottom) + 34px); display: flex; gap: 18px; z-index: 3; }
+.call-btn { width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.1); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.call-btn.off { background: rgba(255,255,255,.92); }
+.call-btn.end { background: #f23f43; }
+.call-btn.accept { background: #23a55a; }
+.call-btn.end svg, .call-btn.accept svg { stroke: #fff !important; }
+.call-pulse { position: absolute; inset: -14px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,.25); animation: callpulse 1.6s ease-out infinite; }
+@keyframes callpulse { from { transform: scale(.9); opacity: 1; } to { transform: scale(1.35); opacity: 0; } }
+
+/* ───── отклики ───── */
+.big-reply { position: relative; width: 100%; height: 76px; border-radius: 26px; font-family: var(--display); font-size: 19px; font-weight: 600; color: #000; background: #fff; overflow: hidden; box-shadow: 0 20px 60px -18px rgba(255,255,255,.45), inset 0 -2px 0 rgba(0,0,0,.12); display: flex; align-items: center; justify-content: center; gap: 10px; }
+.big-reply:disabled { opacity: .5; }
+.big-reply .shine { position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(0,0,0,.09) 45%, transparent 60%); transform: translateX(-100%); animation: shine 2.6s ease-in-out infinite; }
+.big-reply.busy .shine { animation-duration: 1s; }
+@keyframes shine { to { transform: translateX(100%); } }
+.resp-status { font-size: 11px; font-weight: 800; letter-spacing: .04em; padding: 3px 8px; border-radius: 99px; background: rgba(255,255,255,.08); color: var(--muted); white-space: nowrap; }
+.resp-status.ready { background: #fff; color: #000; }
+.resp-status.sent { background: rgba(52,211,153,.16); color: #34d399; }
+.resp-status.failed { background: rgba(255,90,110,.16); color: #ff5a6e; }
+.resp-text { margin-top: 10px; padding: 12px 14px; border-radius: 16px; background: rgba(255,255,255,.05); box-shadow: inset 0 0 0 1px var(--line); white-space: pre-wrap; line-height: 1.5; font-size: 14px; width: 100%; color: var(--text); font: inherit; resize: vertical; border: 0; outline: 0; }
+.presence-dot { position: absolute; right: -2%; bottom: -2%; z-index: 2; }
+.tab { font-size: 10.5px; }

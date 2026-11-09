@@ -32,6 +32,15 @@ const P: Record<string, string> = {
   download: 'M12 4v11m-5-5 5 5 5-5M5 20h14',
   phone: 'M8 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Zm3 15h2',
   plane: 'M21 4 3 11l6 2.5L18 7l-7 8 .5 5 3-3.5 4 3L21 4Z',
+  call: 'M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1Z',
+  hangup: 'M3 14.5c4.8-4.6 13.2-4.6 18 0l-2.4 2.6-3.6-1.4v-2.6a11 11 0 0 0-6 0v2.6l-3.6 1.4L3 14.5Z',
+  video: 'M3 7h12v10H3V7Zm12 3.5 6-3.5v10l-6-3.5',
+  videoOff: 'M3 7h12v10H3V7Zm12 3.5 6-3.5v10l-6-3.5M3 3l18 18',
+  mic: 'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Zm-7 9a7 7 0 0 0 14 0m-7 7v3',
+  micOff: 'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Zm-7 9a7 7 0 0 0 14 0m-7 7v3M3 3l18 18',
+  bolt: 'M13 3 5 14h6l-1 7 8-11h-6l1-7Z',
+  image: 'M4 5h16v14H4V5Zm0 11 5-5 4 4 3-3 4 4M15 9.5h.01',
+  wand: 'M5 19 15 9m2-5v3m3-1h-3m3 6v2m1-1h-2M12 3v2m1-1h-2',
 };
 
 /** Дизайн монохромный — цвет есть только у иконок. У каждой свой оттенок. */
@@ -43,6 +52,8 @@ const C: Record<string, string> = {
   link: '#60a5fa', trash: '#f87171', camera: '#22d3ee', filter: '#a78bfa', crown: '#facc15',
   pin: '#f87171', refresh: '#2dd4bf', logout: '#f87171', more: '#a3a3a3', copy: '#818cf8',
   download: '#4ade80', phone: '#38bdf8', plane: '#38bdf8',
+  call: '#4ade80', hangup: '#f87171', video: '#38bdf8', videoOff: '#f87171', mic: '#4ade80', micOff: '#f87171',
+  bolt: '#facc15', image: '#22d3ee', wand: '#c084fc',
 };
 
 export function Icon({ name, size = 22, stroke = 1.8, className, color }: { name: keyof typeof P | string; size?: number; stroke?: number; className?: string; color?: string }) {

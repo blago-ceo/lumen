@@ -11,14 +11,15 @@ import { registerRealtime } from './realtime.js';
 import { coreRoutes } from './routes/core.js';
 import { accountRoutes } from './routes/accounts.js';
 import { chatRoutes } from './routes/chat.js';
-import { startScheduler } from './parsers/index.js';
+import { responseRoutes } from './routes/responses.js';
+import { backfillKinds, startScheduler } from './parsers/index.js';
 import { startBot } from './bot.js';
 import { bootLinkedAccounts } from './lib/tgUser.js';
 
 const app = Fastify({ logger: { level: 'warn' }, trustProxy: true });
 
 await app.register(cors, { origin: true });
-await app.register(multipart, { limits: { fileSize: 4 * 1024 * 1024 } });
+await app.register(multipart, { limits: { fileSize: 12 * 1024 * 1024 } });
 await app.register(websocket);
 await app.register(fstatic, { root: path.join(config.dataDir, 'uploads'), prefix: '/uploads/', decorateReply: false });
 
@@ -26,6 +27,7 @@ await registerRealtime(app);
 await app.register(coreRoutes);
 await app.register(accountRoutes);
 await app.register(chatRoutes);
+await app.register(responseRoutes);
 
 app.get('/api/health', async () => ({ ok: true }));
 
@@ -40,6 +42,7 @@ if (fs.existsSync(config.webDist)) {
 await app.listen({ port: config.port, host: '::' }); // слушаем и IPv4, и IPv6
 console.log(`✦ Lumen API на http://localhost:${config.port}${config.devAuth ? '  (DEV_AUTH: вход без Telegram)' : ''}`);
 
+backfillKinds();
 startScheduler();
 startBot();
 bootLinkedAccounts();

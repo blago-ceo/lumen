@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Avatar } from '../components/Avatar';
 import { Icon } from '../components/Icon';
+import { ProfileCard } from '../components/ProfileCard';
 import { Sheet } from '../components/ui';
 import { api, type User } from '../lib/api';
 import { useStore } from '../lib/store';
@@ -31,39 +31,34 @@ export function UserSheet({ userId, onClose, onMessage }: { userId: number | nul
   return (
     <Sheet open={!!userId} onClose={onClose}>
       {u && (
-        <div data-theme={u.theme} style={{ margin: '-10px -18px 0', padding: '0 18px' }}>
-          <div className={`banner banner-${u.banner}`} style={{ height: 120, borderRadius: 26 }} />
-          <div style={{ marginTop: -46, display: 'flex', justifyContent: 'center' }}>
-            <Avatar user={u} size={96} glow showOnline />
-          </div>
-          <div style={{ textAlign: 'center', marginTop: 10 }}>
-            <div className="row" style={{ justifyContent: 'center', gap: 8 }}>
-              <span className="h2">{u.nickname}</span>
-              {u.statusEmoji && <span style={{ fontSize: 20 }}>{u.statusEmoji}</span>}
-              {u.pro && <span className="badge badge-accent">PRO</span>}
+        <ProfileCard
+          u={u}
+          self={me?.id === u.id}
+          extra={
+            <div className="pcard-sect">
+              <div className="pcard-label">Друзья</div>
+              <div className="small">{u.friends ?? 0}</div>
             </div>
-            <div className="small muted" style={{ marginTop: 4 }}>
-              {u.online ? 'в сети' : 'был(а) недавно'} · {u.friends ?? 0} друзей
-            </div>
-            {u.bio && <p style={{ margin: '12px 10px 0', color: 'var(--muted)' }}>{u.bio}</p>}
-          </div>
-          {me?.id !== u.id && (
-            <div className="row" style={{ gap: 10, marginTop: 20 }}>
-              <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => onMessage(u.id)}>
-                <Icon name="chat" size={18} /> Написать
-              </button>
-              {u.friendship === 'friends' ? (
-                <button className="btn btn-ghost" onClick={removeFriend}>Удалить</button>
-              ) : u.friendship === 'outgoing' ? (
-                <button className="btn btn-ghost" disabled>Заявка отправлена</button>
-              ) : (
-                <button className="btn btn-ghost" onClick={addFriend}>
-                  <Icon name="addUser" size={18} /> {u.friendship === 'incoming' ? 'Принять' : 'В друзья'}
+          }
+          actions={
+            me?.id !== u.id && (
+              <>
+                <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => onMessage(u.id)}>
+                  <Icon name="chat" size={18} /> Написать
                 </button>
-              )}
-            </div>
-          )}
-        </div>
+                {u.friendship === 'friends' ? (
+                  <button className="btn btn-ghost" onClick={removeFriend}>Удалить</button>
+                ) : u.friendship === 'outgoing' ? (
+                  <button className="btn btn-ghost" disabled>Заявка отправлена</button>
+                ) : (
+                  <button className="btn btn-ghost" onClick={addFriend}>
+                    <Icon name="addUser" size={18} /> {u.friendship === 'incoming' ? 'Принять' : 'В друзья'}
+                  </button>
+                )}
+              </>
+            )
+          }
+        />
       )}
     </Sheet>
   );

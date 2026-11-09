@@ -46,6 +46,23 @@ export function LeadSheet({ lead, onClose, onPatch, onHide }: Props) {
     toast(lead.saved ? 'Убрано из сохранённых' : 'Сохранено', 'ok');
   };
 
+  const toggleResponse = async () => {
+    haptic.tap('medium');
+    try {
+      if (lead.inResponses) {
+        await api.del(`/api/responses/${encodeURIComponent(lead.id)}`);
+        onPatch(lead.id, { inResponses: false });
+        toast('Убрано из откликов');
+      } else {
+        await api.post('/api/responses', { leadId: lead.id });
+        onPatch(lead.id, { inResponses: true });
+        toast('Добавлено в «Отклики» — ИИ напишет заказчику', 'ok');
+      }
+    } catch (e) {
+      toast((e as Error).message, 'err');
+    }
+  };
+
   const openShare = async () => {
     setMode('share');
     setConvs(await api.get<Conversation[]>('/api/conversations'));
@@ -54,7 +71,7 @@ export function LeadSheet({ lead, onClose, onPatch, onHide }: Props) {
   const shareTo = async (c: Conversation) => {
     setBusy(true);
     try {
-      const { saved, seen, ...payload } = lead;
+      const { saved, seen, inResponses, ...payload } = lead;
       await api.post(`/api/conversations/${c.id}/messages`, { kind: 'lead', text: '', payload });
       haptic.ok();
       toast(`Отправлено в «${c.title}»`, 'ok');
@@ -129,12 +146,15 @@ export function LeadSheet({ lead, onClose, onPatch, onHide }: Props) {
             <p style={{ whiteSpace: 'pre-wrap', color: 'var(--muted)', fontSize: 14.5, lineHeight: 1.55, margin: '16px 2px 20px' }}>{lead.description}</p>
 
             <div className="col" style={{ gap: 10, position: 'sticky', bottom: 0, paddingTop: 8, paddingBottom: 4, background: 'linear-gradient(transparent, rgba(8,8,8,.96) 30%)' }}>
+              <motion.button whileTap={{ scale: 0.97 }} className={`btn btn-block ${lead.inResponses ? 'btn-ghost' : 'btn-primary'}`} onClick={toggleResponse}>
+                <Icon name={lead.inResponses ? 'check' : 'bolt'} size={18} stroke={2.2} /> {lead.inResponses ? 'В откликах' : 'В отклики · ИИ напишет сам'}
+              </motion.button>
               {tgAcc && tgContact ? (
-                <button className="btn btn-primary btn-block" onClick={() => setMode('reply')}>
+                <button className="btn btn-ghost btn-block" onClick={() => setMode('reply')}>
                   <Icon name="send" size={18} /> Написать {tgContact}
                 </button>
               ) : (
-                <button className="btn btn-primary btn-block" onClick={() => openLink(lead.url)}>
+                <button className="btn btn-ghost btn-block" onClick={() => openLink(lead.url)}>
                   <Icon name="external" size={18} /> Откликнуться на {lead.platform === 'twogis' ? '2ГИС' : 'площадке'}
                 </button>
               )}

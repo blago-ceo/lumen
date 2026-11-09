@@ -82,6 +82,16 @@ export interface User {
   banner: string;
   bio: string;
   statusEmoji: string;
+  customStatus?: string;
+  bannerUrl?: string | null;
+  bannerGrad?: string;
+  nickGrad?: string;
+  nickFont?: string;
+  presence?: Presence;
+  /** что выбрал сам пользователь (только в /api/me) */
+  presencePref?: Presence | 'invisible';
+  createdAt?: number;
+  aiPersona?: string;
   pro: boolean;
   admin: boolean;
   online: boolean;
@@ -90,6 +100,8 @@ export interface User {
   friends?: number;
   role?: string;
 }
+
+export type Presence = 'online' | 'idle' | 'dnd' | 'offline';
 
 export type PlatformId = 'kwork' | 'flru' | 'freelanceru' | 'pchel' | 'telegram' | 'twogis';
 
@@ -108,6 +120,9 @@ export interface Lead {
   source: string | null;
   score: number;
   isLanding: boolean;
+  isDesign?: boolean;
+  isDev?: boolean;
+  inResponses?: boolean;
   personal: boolean;
   publishedAt: number;
   saved: boolean;

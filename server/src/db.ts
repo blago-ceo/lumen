@@ -166,3 +166,34 @@ export function tx<T>(fn: () => T): T {
     throw e;
   }
 }
+
+/* ───────── миграции (добавляем колонки к уже созданной БД) ───────── */
+function addCol(table: string, col: string, def: string) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  if (!cols.some((c) => c.name === col)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`);
+}
+// профиль в стиле Discord
+addCol('users', 'banner_url', 'TEXT');                       // картинка/GIF на фон профиля
+addCol('users', 'banner_grad', "TEXT NOT NULL DEFAULT ''");  // "#hex,#hex" — градиент фона
+addCol('users', 'nick_grad', "TEXT NOT NULL DEFAULT ''");    // "#hex,#hex" — градиент ника
+addCol('users', 'nick_font', "TEXT NOT NULL DEFAULT 'manrope'");
+addCol('users', 'presence', "TEXT NOT NULL DEFAULT 'online'"); // online | idle | dnd | invisible
+addCol('users', 'custom_status', "TEXT NOT NULL DEFAULT ''");
+addCol('users', 'ai_persona', "TEXT NOT NULL DEFAULT ''");   // инструкция для ИИ-откликов
+// типы заказов для фильтров
+addCol('leads', 'is_design', 'INTEGER');
+addCol('leads', 'is_dev', 'INTEGER');
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS responses (
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  lead_id    TEXT NOT NULL,
+  status     TEXT NOT NULL DEFAULT 'queued', -- queued | generating | ready | sent | failed
+  text       TEXT NOT NULL DEFAULT '',
+  channel    TEXT,                           -- telegram | manual
+  error      TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, lead_id)
+);
+`);

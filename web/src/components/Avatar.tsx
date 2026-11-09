@@ -1,8 +1,9 @@
 import type { User } from '../lib/api';
 import { avatarGradient } from '../lib/util';
+import { PresenceIcon } from './ProfileBits';
 
 interface Props {
-  user: Pick<User, 'id' | 'nickname' | 'avatar' | 'ring'> & { online?: boolean };
+  user: Pick<User, 'id' | 'nickname' | 'avatar' | 'ring'> & { online?: boolean; presence?: User['presence'] };
   size?: number;
   ring?: string; // предпросмотр в редакторе
   glow?: boolean;
@@ -30,7 +31,11 @@ export function Avatar({ user, size = 44, ring, glow, showOnline }: Props) {
       >
         {!user.avatar && (user.nickname?.[0]?.toUpperCase() ?? '?')}
       </div>
-      {showOnline && user.online && <div className="online-dot" />}
+      {showOnline && user.online && (
+        <div className="presence-dot">
+          <PresenceIcon p={user.presence && user.presence !== 'offline' ? user.presence : 'online'} size={Math.max(12, Math.round(size * 0.3))} />
+        </div>
+      )}
     </div>
   );
 }

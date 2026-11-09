@@ -50,6 +50,35 @@ export async function registerRealtime(app: FastifyInstance) {
           const isMember = q.get('SELECT 1 FROM conversation_members WHERE conversation_id = ? AND user_id = ?', m.conversationId, uid);
           if (isMember) broadcast(members.map((x) => x.user_id), 'typing', { conversationId: m.conversationId, userId: uid });
         }
+        // Звонки 1:1: сервер только пересылает сигналинг WebRTC (offer/answer/ice) между участниками личного чата
+        if (typeof m.type === 'string' && m.type.startsWith('call:') && m.conversationId) {
+          const conv = q.get(
+            "SELECT c.id FROM conversations c JOIN conversation_members cm ON cm.conversation_id = c.id WHERE c.id = ? AND c.type = 'direct' AND cm.user_id = ?",
+            m.conversationId,
+            uid,
+          );
+          if (!conv) return;
+          const peer = q.get<{ user_id: number }>(
+            'SELECT user_id FROM conversation_members WHERE conversation_id = ? AND user_id != ?',
+            m.conversationId,
+            uid,
+          );
+          if (!peer) return;
+          const allowed = ['call:invite', 'call:accept', 'call:decline', 'call:end', 'call:signal', 'call:busy'];
+          if (!allowed.includes(m.type)) return;
+          if (m.type === 'call:invite' && !isOnline(peer.user_id)) {
+            socket.send(JSON.stringify({ type: 'call:unavailable', data: { conversationId: m.conversationId } }));
+            return;
+          }
+          const from = q.get('SELECT id, nickname, avatar_url, ring FROM users WHERE id = ?', uid);
+          sendTo(peer.user_id, m.type, {
+            conversationId: m.conversationId,
+            callId: m.callId,
+            from: { id: uid, nickname: from?.nickname, avatar: from?.avatar_url, ring: from?.ring },
+            video: !!m.video,
+            signal: m.signal,
+          });
+        }
       } catch {
         /* ignore */
       }

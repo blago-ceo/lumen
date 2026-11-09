@@ -31,6 +31,7 @@ export function LeadCard({ lead, onOpen, locked }: { lead: Lead; onOpen?: () => 
       <div className="row" style={{ gap: 8 }}>
         <PlatformTag lead={lead} />
         <div className="spacer" />
+        {lead.inResponses && <Icon name="bolt" size={15} />}
         {lead.saved && <Icon name="bookmark" size={15} className="faint" />}
         {lead.personal && <span className="badge badge-soft">мой чат</span>}
         {lead.isLanding && <span className="badge badge-accent">Лендинг</span>}
