@@ -28,14 +28,22 @@ npm run dev:web      # фронт http://localhost:5180
 При `DEV_AUTH=1` вход работает без Telegram: dev-пользователь становится админом, плюс создаются 3 демо-юзера для чатов. Оплату можно «симулировать».
 Проверить парсеры разово: `npm run parse:once -w server` (или `… -- kwork`).
 
-## Бесплатно на Render
+## Установка на VPS (одной командой)
 
-1. Зарегистрируйтесь на [render.com](https://render.com) через GitHub.
-2. **New → Blueprint** → выберите репозиторий `blago-ceo/lumen` → Render прочитает `render.yaml`.
-3. Заполните поля: `BOT_TOKEN` (от @BotFather), `ADMIN_IDS` (свой Telegram ID из @userinfobot), `ANTHROPIC_API_KEY` — по желанию.
-4. **Apply** — через несколько минут сайт будет на `https://lumen-xxxx.onrender.com`. Адрес сам подставится в кнопку бота.
+Нужен VPS с Ubuntu 22.04/24.04, 1 ядро, 1–2 ГБ памяти. Домен не обязателен.
 
-Важно: один и тот же бот нельзя одновременно запускать и на Render, и у себя на компьютере — Telegram отдаёт сообщения только одному. Ограничения бесплатного тарифа: сервис засыпает через 15 минут без посетителей (первое открытие ~минута), база обнуляется при каждом перезапуске.
+```bash
+ssh root@IP_СЕРВЕРА
+curl -fsSL https://raw.githubusercontent.com/blago-ceo/lumen/main/deploy/install.sh -o install.sh && bash install.sh
+```
+
+Скрипт спросит токен бота, ваш Telegram ID и (по желанию) домен и ключ Anthropic, затем поставит Node.js 24, Caddy (HTTPS), соберёт сайт и включит автозапуск. Без домена сайт будет на `https://<ip-через-дефисы>.sslip.io`.
+
+- логи: `journalctl -u lumen -f`
+- обновить до свежей версии с GitHub: `bash /opt/lumen/deploy/update.sh`
+- поменять настройки: `nano /opt/lumen/.env`, затем `systemctl restart lumen`
+
+Один бот нельзя запускать в двух местах сразу — Telegram отдаёт сообщения только одной копии. После переезда на сервер не запускайте Lumen с тем же токеном у себя.
 
 ## В продакшен
 
