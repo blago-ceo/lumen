@@ -35,13 +35,26 @@
   const msg = document.getElementById('msg');
   const go = document.getElementById('go');
 
-  async function current() {
+  // Три источника по очереди: API (свежий, но 60 запросов/час на IP), raw (кэш ~5 мин), Pages (кэш ~10 мин).
+  // Из ответивших берём самый свежий адрес.
+  const RAW = 'https://raw.githubusercontent.com/blago-ceo/lumen/gh-pages/tunnel.json';
+  async function get(url, headers) {
     try {
-      const r = await fetch(API + '&t=' + Date.now(), { headers: { Accept: 'application/vnd.github.raw+json' }, cache: 'no-store' });
-      if (r.ok) return await r.json();
+      const r = await fetch(url, { headers: headers || {}, cache: 'no-store' });
+      if (r.ok) { const d = await r.json(); if (d && d.url) return d; }
     } catch (e) {}
-    const r = await fetch('tunnel.json?t=' + Date.now(), { cache: 'no-store' });
-    return r.json();
+    return null;
+  }
+  async function current() {
+    const t = Date.now();
+    const all = await Promise.all([
+      get(API + '&t=' + t, { Accept: 'application/vnd.github.raw+json' }),
+      get(RAW + '?t=' + t),
+      get('tunnel.json?t=' + t),
+    ]);
+    const ok = all.filter(Boolean).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    if (!ok.length) throw new Error('no source');
+    return ok[0];
   }
 
   current()
