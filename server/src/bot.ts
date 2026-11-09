@@ -57,6 +57,23 @@ export function activateSubscription(userId: number, chargeId: string | null, am
   return expires;
 }
 
+/**
+ * Временные туннели (localhost.run) меняют адрес. Если WEBAPP_URL не задан в .env,
+ * берём адрес из первого запроса, пришедшего через туннель, и переставляем кнопку бота.
+ */
+const TUNNEL_HOST = /^[a-z0-9-]+\.(lhr\.life|localhost\.run|trycloudflare\.com)$/i;
+const pinnedUrl = !!process.env.WEBAPP_URL;
+export function learnPublicHost(host: string | undefined) {
+  if (pinnedUrl || !bot || !host || !TUNNEL_HOST.test(host)) return;
+  const url = `https://${host.toLowerCase()}`;
+  if (config.webappUrl === url) return;
+  config.webappUrl = url;
+  console.log(`[bot] публичный адрес: ${url}`);
+  bot.api
+    .setChatMenuButton({ menu_button: { type: 'web_app', text: 'Lumen', web_app: { url } } })
+    .catch((e) => console.warn('[bot] menu:', (e as Error).message));
+}
+
 export async function startBot() {
   if (!bot) {
     console.log('[bot] BOT_TOKEN не задан — бот выключен (dev-режим)');
@@ -68,6 +85,9 @@ export async function startBot() {
     botInfo.username = me.username;
     if (config.webappUrl.startsWith('https://')) {
       await bot.api.setChatMenuButton({ menu_button: { type: 'web_app', text: 'Lumen', web_app: { url: config.webappUrl } } });
+    } else {
+      // адреса пока нет — убираем кнопку, чтобы она не вела на мёртвую ссылку
+      await bot.api.setChatMenuButton({ menu_button: { type: 'commands' } });
     }
     await bot.api.setMyCommands([
       { command: 'start', description: 'Открыть Lumen' },

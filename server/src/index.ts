@@ -13,7 +13,7 @@ import { accountRoutes } from './routes/accounts.js';
 import { chatRoutes } from './routes/chat.js';
 import { responseRoutes } from './routes/responses.js';
 import { backfillKinds, startScheduler } from './parsers/index.js';
-import { startBot } from './bot.js';
+import { learnPublicHost, startBot } from './bot.js';
 import { bootLinkedAccounts } from './lib/tgUser.js';
 
 const app = Fastify({ logger: { level: 'warn' }, trustProxy: true });
@@ -22,6 +22,9 @@ await app.register(cors, { origin: true });
 await app.register(multipart, { limits: { fileSize: 12 * 1024 * 1024 } });
 await app.register(websocket);
 await app.register(fstatic, { root: path.join(config.dataDir, 'uploads'), prefix: '/uploads/', decorateReply: false });
+
+// именно Host, а не X-Forwarded-Host: его туннель не даёт подменить, он по нему и маршрутизирует
+app.addHook('onRequest', async (req) => learnPublicHost(req.headers.host?.split(':')[0]));
 
 await registerRealtime(app);
 await app.register(coreRoutes);
