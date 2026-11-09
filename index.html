@@ -1,96 +1,27 @@
 <!doctype html>
 <html lang="ru">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#000000" />
-<title>Lumen</title>
-<style>
-  :root { color-scheme: dark; }
-  html, body { height: 100%; margin: 0; }
-  body {
-    background: #000; color: #fafafa; font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
-    display: grid; place-items: center; text-align: center; padding: 24px; box-sizing: border-box;
-    background-image: radial-gradient(rgba(255,255,255,.1) 1px, transparent 1.3px); background-size: 24px 24px;
-  }
-  .card { max-width: 360px; }
-  .logo { font-size: 44px; animation: spin 6s linear infinite; display: inline-block; }
-  h1 { font-size: 28px; margin: 10px 0 6px; letter-spacing: -.02em; }
-  p { color: rgba(255,255,255,.56); margin: 0 0 18px; }
-  a.btn { display: inline-block; padding: 14px 22px; border-radius: 18px; background: #fff; color: #000; font-weight: 700; text-decoration: none; }
-  .hidden { display: none; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-</style>
-</head>
-<body>
-<div class="card">
-  <div class="logo">✦</div>
-  <h1>Lumen</h1>
-  <p id="msg">Подключаюсь…</p>
-  <a id="go" class="btn hidden" href="#">Открыть</a>
-</div>
-<script>
-  // Текущий адрес туннеля лежит в tunnel.json в этой же ветке. Берём через API GitHub — он не кэширует по 10 минут, как Pages.
-  const API = 'https://api.github.com/repos/blago-ceo/lumen/contents/tunnel.json?ref=gh-pages';
-  const msg = document.getElementById('msg');
-  const go = document.getElementById('go');
-
-  // Три источника по очереди: API (свежий, но 60 запросов/час на IP), raw (кэш ~5 мин), Pages (кэш ~10 мин).
-  // Из ответивших берём самый свежий адрес.
-  const RAW = 'https://raw.githubusercontent.com/blago-ceo/lumen/gh-pages/tunnel.json';
-  async function get(url, headers) {
-    try {
-      const r = await fetch(url, { headers: headers || {}, cache: 'no-store' });
-      if (r.ok) { const d = await r.json(); if (d && d.url) return d; }
-    } catch (e) {}
-    return null;
-  }
-  async function current() {
-    const t = Date.now();
-    const all = await Promise.all([
-      get(API + '&t=' + t, { Accept: 'application/vnd.github.raw+json' }),
-      get(RAW + '?t=' + t),
-      get('tunnel.json?t=' + t),
-    ]);
-    const ok = all.filter(Boolean).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-    if (!ok.length) throw new Error('no source');
-    return ok[0];
-  }
-
-  // Живой ли туннель: no-cors fetch к мёртвому домену падает с сетевой ошибкой, к живому — проходит.
-  async function alive(url) {
-    try {
-      const ctl = new AbortController();
-      const timer = setTimeout(() => ctl.abort(), 8000);
-      await fetch(url + '/api/health?t=' + Date.now(), { mode: 'no-cors', cache: 'no-store', signal: ctl.signal });
-      clearTimeout(timer);
-      return true;
-    } catch (e) { return false; }
-  }
-
-  let tries = 0;
-  async function attempt() {
-    tries++;
-    let d;
-    try { d = await current(); } catch (e) { d = null; }
-    if (!d || !/^https:\/\//.test(d.url || '')) {
-      msg.textContent = 'Не удалось узнать адрес сервера. Обновите страницу через минуту.';
-      return;
-    }
-    go.href = d.url;
-    if (await alive(d.url)) {
-      msg.textContent = 'Открываю…';
-      location.replace(d.url);
-      return;
-    }
-    // туннель как раз перезапускается или компьютер выключен — пробуем ещё несколько минут
-    go.classList.remove('hidden');
-    msg.textContent = tries < 20
-      ? 'Сервер перезапускается, жду новый адрес… (' + tries + ')'
-      : 'Сервер сейчас выключен. Попробуйте позже.';
-    if (tries < 20) setTimeout(attempt, 15000);
-  }
-  attempt();
-</script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="Заказы на лендинги и веб-дизайн с 6 площадок в одной ленте" />
+    <link rel="manifest" href="/lumen/manifest.webmanifest" />
+    <!-- iPhone: «Поделиться → На экран Домой» открывает как приложение -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Lumen" />
+    <link rel="apple-touch-icon" href="/lumen/icons/apple-touch-icon.png" />
+    <title>Lumen</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@500;600;700&family=JetBrains+Mono:wght@600;800&family=Playfair+Display:ital,wght@1,700;1,800&family=Caveat:wght@700&family=Press+Start+2P&display=swap" rel="stylesheet" />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="icon" type="image/png" href="/lumen/icons/icon-192.png" />
+    <script type="module" crossorigin src="/lumen/assets/index--HFY1pPe.js"></script>
+    <link rel="stylesheet" crossorigin href="/lumen/assets/index-quY5PxUn.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
 </html>
